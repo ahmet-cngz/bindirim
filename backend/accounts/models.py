@@ -19,7 +19,9 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         if not extra_fields["is_staff"] or not extra_fields["is_superuser"]:
-            raise ValueError("Superusers must have is_staff=True and is_superuser=True.")
+            raise ValueError(
+                "Superusers must have is_staff=True and is_superuser=True."
+            )
         return self.create_user(email, password, **extra_fields)
 
 
@@ -32,4 +34,8 @@ class User(AbstractUser):
     objects = UserManager()
 
     class Meta:
-        constraints = [models.UniqueConstraint(Lower("email"), name="user_email_case_insensitive")]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"), name="user_email_case_insensitive"
+            )
+        ]

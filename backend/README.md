@@ -313,3 +313,35 @@ email verification remains a separate, unimplemented feature.
 Tests mock the provider: no real messages are sent by the test suite. Configure
 credentials and verify the sender before testing real delivery with a new price
 alert on an opted-in account.
+
+
+## Formatting and linting
+
+[Ruff](https://docs.astral.sh/ruff/formatter/) formats Python code and sorts imports.
+Its pinned version and rules live in `requirements-dev.txt` and `pyproject.toml`.
+From `backend/`, install the development tools once:
+
+```sh
+.venv/bin/python -m pip install -r requirements-dev.txt
+```
+
+```sh
+make format        # Sort imports and format all Python files, including migrations
+make check         # Check Flake8, Ruff lint, and formatting without changing files
+make test          # Run Django tests with local development settings
+```
+
+The style uses four spaces, double quotes, a 79-character target width, LF line
+endings, and trailing commas for multiline collections and calls. The formatter
+expands dense expressions and nested structures consistently. Long strings may
+remain wider than the target. Lint catches unused imports/variables, syntax/style
+errors, and unsorted imports. `.editorconfig` supplies matching editor defaults.
+
+Commands use `.venv/bin/python` by default; override with `make check PYTHON=python`
+when an environment is already active. GitHub Actions runs formatting, lint,
+migration consistency checks, and tests for backend changes.
+
+After each backend code change, run `make format` and `make check` and fix all
+violations before finishing. This requirement is recorded in `AGENTS.md` and
+enforced by the existing backend CI checks. Flake8 enforces a 79-character
+line limit, including strings; wrap long literals with adjacent string segments.

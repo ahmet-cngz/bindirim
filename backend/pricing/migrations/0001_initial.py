@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -16,92 +15,247 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Product',
+            name="Product",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('url', models.URLField(max_length=2048, unique=True)),
-                ('store', models.CharField(max_length=32)),
-                ('title', models.CharField(blank=True, max_length=500)),
-                ('image_url', models.URLField(blank=True, max_length=2048)),
-                ('current_price', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
-                ('currency', models.CharField(default='TRY', max_length=3)),
-                ('availability', models.CharField(default='unknown', max_length=16)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('ok', 'OK'), ('error', 'Error')], default='pending', max_length=16)),
-                ('last_checked_at', models.DateTimeField(blank=True, null=True)),
-                ('last_attempted_at', models.DateTimeField(blank=True, null=True)),
-                ('next_check_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
-                ('consecutive_failures', models.PositiveIntegerField(default=0)),
-                ('last_error', models.CharField(blank=True, max_length=300)),
-                ('lease_id', models.UUIDField(blank=True, editable=False, null=True)),
-                ('lease_until', models.DateTimeField(blank=True, editable=False, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("url", models.URLField(max_length=2048, unique=True)),
+                ("store", models.CharField(max_length=32)),
+                ("title", models.CharField(blank=True, max_length=500)),
+                ("image_url", models.URLField(blank=True, max_length=2048)),
+                (
+                    "current_price",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=12, null=True
+                    ),
+                ),
+                ("currency", models.CharField(default="TRY", max_length=3)),
+                (
+                    "availability",
+                    models.CharField(default="unknown", max_length=16),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("ok", "OK"),
+                            ("error", "Error"),
+                        ],
+                        default="pending",
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "last_checked_at",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                (
+                    "last_attempted_at",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                (
+                    "next_check_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now
+                    ),
+                ),
+                (
+                    "consecutive_failures",
+                    models.PositiveIntegerField(default=0),
+                ),
+                ("last_error", models.CharField(blank=True, max_length=300)),
+                (
+                    "lease_id",
+                    models.UUIDField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "lease_until",
+                    models.DateTimeField(
+                        blank=True, editable=False, null=True
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'constraints': [models.CheckConstraint(condition=models.Q(('current_price__isnull', True), ('current_price__gt', 0), _connector='OR'), name='product_price_positive')],
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("current_price__isnull", True),
+                            ("current_price__gt", 0),
+                            _connector="OR",
+                        ),
+                        name="product_price_positive",
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='PriceObservation',
+            name="PriceObservation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('price', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
-                ('currency', models.CharField(max_length=3)),
-                ('availability', models.CharField(max_length=16)),
-                ('observed_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='observations', to='pricing.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "price",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=12, null=True
+                    ),
+                ),
+                ("currency", models.CharField(max_length=3)),
+                ("availability", models.CharField(max_length=16)),
+                (
+                    "observed_at",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="observations",
+                        to="pricing.product",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-observed_at', '-pk'],
+                "ordering": ["-observed_at", "-pk"],
             },
         ),
         migrations.CreateModel(
-            name='Watch',
+            name="Watch",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('target_price', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True)),
-                ('alerts_enabled', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='watches', to='pricing.product')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='watches', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "target_price",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=12, null=True
+                    ),
+                ),
+                ("alerts_enabled", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="watches",
+                        to="pricing.product",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="watches",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at', '-pk'],
+                "ordering": ["-created_at", "-pk"],
             },
         ),
         migrations.CreateModel(
-            name='PriceAlert',
+            name="PriceAlert",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('previous_price', models.DecimalField(decimal_places=2, max_digits=12)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=12)),
-                ('currency', models.CharField(max_length=3)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('read_at', models.DateTimeField(blank=True, null=True)),
-                ('observation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='pricing.priceobservation')),
-                ('watch', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='alerts', to='pricing.watch')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "previous_price",
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
+                (
+                    "price",
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
+                ("currency", models.CharField(max_length=3)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("read_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "observation",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="pricing.priceobservation",
+                    ),
+                ),
+                (
+                    "watch",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="alerts",
+                        to="pricing.watch",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at', '-pk'],
+                "ordering": ["-created_at", "-pk"],
             },
         ),
         migrations.AddIndex(
-            model_name='priceobservation',
-            index=models.Index(fields=['product', '-observed_at'], name='pricing_pri_product_ff0784_idx'),
+            model_name="priceobservation",
+            index=models.Index(
+                fields=["product", "-observed_at"],
+                name="pricing_pri_product_ff0784_idx",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='priceobservation',
-            constraint=models.CheckConstraint(condition=models.Q(('price__isnull', True), ('price__gt', 0), _connector='OR'), name='observation_price_positive'),
+            model_name="priceobservation",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("price__isnull", True), ("price__gt", 0), _connector="OR"
+                ),
+                name="observation_price_positive",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='watch',
-            constraint=models.UniqueConstraint(fields=('user', 'product'), name='unique_user_product_watch'),
+            model_name="watch",
+            constraint=models.UniqueConstraint(
+                fields=("user", "product"), name="unique_user_product_watch"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='watch',
-            constraint=models.CheckConstraint(condition=models.Q(('target_price__isnull', True), ('target_price__gt', 0), _connector='OR'), name='target_price_positive'),
+            model_name="watch",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("target_price__isnull", True),
+                    ("target_price__gt", 0),
+                    _connector="OR",
+                ),
+                name="target_price_positive",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='pricealert',
-            constraint=models.UniqueConstraint(fields=('watch', 'observation'), name='unique_watch_observation_alert'),
+            model_name="pricealert",
+            constraint=models.UniqueConstraint(
+                fields=("watch", "observation"),
+                name="unique_watch_observation_alert",
+            ),
         ),
     ]

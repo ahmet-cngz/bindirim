@@ -18,13 +18,24 @@ URL = "https://www.trendyol.com/brand/shirt-p-31341390"
 
 class PriceCheckTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user("owner@example.com", "test-password")
+        self.user = User.objects.create_user(
+            "owner@example.com", "test-password"
+        )
         self.product = Product.objects.create(url=URL, store="trendyol")
         self.watch = Watch.objects.create(user=self.user, product=self.product)
 
     def check(self, price="100.00", availability="in_stock", offer_key=""):
-        Product.objects.filter(pk=self.product.pk).update(next_check_at=timezone.now() - timedelta(seconds=1))
-        result = PriceResult("Shirt", "", Decimal(price) if price is not None else None, "TRY", availability, offer_key)
+        Product.objects.filter(pk=self.product.pk).update(
+            next_check_at=timezone.now() - timedelta(seconds=1)
+        )
+        result = PriceResult(
+            "Shirt",
+            "",
+            Decimal(price) if price is not None else None,
+            "TRY",
+            availability,
+            offer_key,
+        )
         with patch("pricing.services.scrape_product", return_value=result):
             outcome = check_product(self.product.pk)
         self.product.refresh_from_db()
@@ -65,15 +76,22 @@ class PriceCheckTests(TestCase):
     def test_failure_preserves_last_good_price_and_backs_off(self):
         self.check()
         last_checked = self.product.last_checked_at
-        Product.objects.filter(pk=self.product.pk).update(next_check_at=timezone.now())
-        with patch("pricing.services.scrape_product", side_effect=PriceCheckError("Store returned HTTP 403.")):
+        Product.objects.filter(pk=self.product.pk).update(
+            next_check_at=timezone.now()
+        )
+        with patch(
+            "pricing.services.scrape_product",
+            side_effect=PriceCheckError("Store returned HTTP 403."),
+        ):
             self.assertEqual(check_product(self.product.pk), "error")
         self.product.refresh_from_db()
         self.assertEqual(self.product.current_price, Decimal("100"))
         self.assertEqual(self.product.last_checked_at, last_checked)
         self.assertEqual(self.product.status, "error")
         self.assertEqual(self.product.consecutive_failures, 1)
-        self.assertGreater(self.product.next_check_at, timezone.now() + timedelta(minutes=14))
+        self.assertGreater(
+            self.product.next_check_at, timezone.now() + timedelta(minutes=14)
+        )
         self.assertEqual(PriceObservation.objects.count(), 1)
         self.check("90")
         self.assertEqual(self.product.consecutive_failures, 0)
@@ -103,41 +121,76 @@ class PriceCheckTests(TestCase):
 
     @patch("pricing.services.scrape_product")
     def test_due_time_and_active_lease_skip_network(self, scrape):
-        Product.objects.filter(pk=self.product.pk).update(next_check_at=timezone.now() + timedelta(hours=1))
+        Product.objects.filter(pk=self.product.pk).update(
+            next_check_at=timezone.now() + timedelta(hours=1)
+        )
         self.assertEqual(check_product(self.product.pk), "skipped")
-        Product.objects.filter(pk=self.product.pk).update(next_check_at=timezone.now(), lease_until=timezone.now() + timedelta(minutes=2))
+        Product.objects.filter(pk=self.product.pk).update(
+            next_check_at=timezone.now(),
+            lease_until=timezone.now() + timedelta(minutes=2),
+        )
         self.assertEqual(check_product(self.product.pk), "skipped")
         scrape.assert_not_called()
 
     def test_expired_lease_can_be_reclaimed(self):
-        Product.objects.filter(pk=self.product.pk).update(lease_id=uuid.uuid4(), lease_until=timezone.now() - timedelta(minutes=1))
+        Product.objects.filter(pk=self.product.pk).update(
+            lease_id=uuid.uuid4(),
+            lease_until=timezone.now() - timedelta(minutes=1),
+        )
         self.assertEqual(self.check(), "ok")
 
     @override_settings(PRICE_CHECK_INTERVAL_MINUTES=15)
     def test_fifteen_minute_success_and_failure_schedule(self):
         self.check()
-        self.assertAlmostEqual((self.product.next_check_at - self.product.last_checked_at).total_seconds(), 900)
-        Product.objects.filter(pk=self.product.pk).update(next_check_at=timezone.now(), consecutive_failures=3)
+        self.assertAlmostEqual(
+            (
+                self.product.next_check_at - self.product.last_checked_at
+            ).total_seconds(),
+            900,
+        )
+        Product.objects.filter(pk=self.product.pk).update(
+            next_check_at=timezone.now(), consecutive_failures=3
+        )
         before = timezone.now()
-        with patch("pricing.services.scrape_product", side_effect=PriceCheckError("Store unavailable.")):
+        with patch(
+            "pricing.services.scrape_product",
+            side_effect=PriceCheckError("Store unavailable."),
+        ):
             self.assertEqual(check_product(self.product.pk), "error")
         self.product.refresh_from_db()
-        self.assertLess(abs((self.product.next_check_at - before).total_seconds() - 900), 5)
+        self.assertLess(
+            abs((self.product.next_check_at - before).total_seconds() - 900), 5
+        )
 
     def test_expired_worker_cannot_overwrite_new_lease(self):
         def replace_lease(url):
-            Product.objects.filter(pk=self.product.pk).update(lease_id=uuid.uuid4())
+            Product.objects.filter(pk=self.product.pk).update(
+                lease_id=uuid.uuid4()
+            )
             return PriceResult("Shirt", "", Decimal("100"), "TRY", "in_stock")
 
-        with patch("pricing.services.scrape_product", side_effect=replace_lease):
+        with patch(
+            "pricing.services.scrape_product", side_effect=replace_lease
+        ):
             self.assertEqual(check_product(self.product.pk), "skipped")
         self.assertFalse(PriceObservation.objects.exists())
 
-    @patch("pricing.services.scrape_product", return_value=PriceResult("Shirt", "", Decimal("100"), "TRY", "in_stock"))
-    def test_command_fetches_shared_product_once_and_ignores_unwatched(self, scrape):
-        second_user = User.objects.create_user("other@example.com", "test-password")
+    @patch(
+        "pricing.services.scrape_product",
+        return_value=PriceResult(
+            "Shirt", "", Decimal("100"), "TRY", "in_stock"
+        ),
+    )
+    def test_command_fetches_shared_product_once_and_ignores_unwatched(
+        self, scrape
+    ):
+        second_user = User.objects.create_user(
+            "other@example.com", "test-password"
+        )
         Watch.objects.create(user=second_user, product=self.product)
-        Product.objects.create(url="https://www.trendyol.com/brand/other-p-2", store="trendyol")
+        Product.objects.create(
+            url="https://www.trendyol.com/brand/other-p-2", store="trendyol"
+        )
         output = StringIO()
         call_command("check_prices", stdout=output)
         self.assertEqual(scrape.call_count, 1)

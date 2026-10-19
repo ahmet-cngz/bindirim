@@ -7,3 +7,6 @@ __pycache__/
 .coverage
 staticfiles/
 logs/
+
+# Python tooling caches
+.ruff_cache/

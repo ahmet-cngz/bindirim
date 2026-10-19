@@ -11,29 +11,45 @@ class UserSerializer(serializers.ModelSerializer):
     email_notifications_available = serializers.SerializerMethodField()
 
     def get_email_notifications_available(self, obj):
-        return bool(settings.RESEND_API_KEY and settings.NOTIFICATION_FROM_EMAIL)
+        return bool(
+            settings.RESEND_API_KEY and settings.NOTIFICATION_FROM_EMAIL
+        )
 
     class Meta:
         model = User
-        fields = ["id", "email", "date_joined", "email_notifications_enabled", "email_notifications_available"]
+        fields = [
+            "id",
+            "email",
+            "date_joined",
+            "email_notifications_enabled",
+            "email_notifications_available",
+        ]
         read_only_fields = fields
 
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
-    password = serializers.CharField(write_only=True, max_length=128, trim_whitespace=False)
+    password = serializers.CharField(
+        write_only=True, max_length=128, trim_whitespace=False
+    )
 
     def validate_email(self, value):
         value = value.strip().lower()
         if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("An account with this email already exists.")
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
         return value
 
     def validate(self, attrs):
         try:
-            password_validation.validate_password(attrs["password"], User(email=attrs["email"]))
+            password_validation.validate_password(
+                attrs["password"], User(email=attrs["email"])
+            )
         except DjangoValidationError as exc:
-            raise serializers.ValidationError({"password": exc.messages}) from exc
+            raise serializers.ValidationError(
+                {"password": exc.messages}
+            ) from exc
         return attrs
 
     def create(self, validated_data):
@@ -41,17 +57,22 @@ class RegisterSerializer(serializers.Serializer):
             with transaction.atomic():
                 return User.objects.create_user(**validated_data)
         except IntegrityError as exc:
-            raise serializers.ValidationError({"email": "An account with this email already exists."}) from exc
+            raise serializers.ValidationError(
+                {"email": "An account with this email already exists."}
+            ) from exc
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True, max_length=128, trim_whitespace=False)
+    password = serializers.CharField(
+        write_only=True, max_length=128, trim_whitespace=False
+    )
 
     def validate(self, attrs):
         user = authenticate(
             request=self.context.get("request"),
-            email=attrs["email"].strip().lower(), password=attrs["password"],
+            email=attrs["email"].strip().lower(),
+            password=attrs["password"],
         )
         if user is None:
             raise serializers.ValidationError("Invalid email or password.")
@@ -59,7 +80,9 @@ class LoginSerializer(serializers.Serializer):
 
 
 class DeleteAccountSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True, max_length=128, trim_whitespace=False)
+    password = serializers.CharField(
+        write_only=True, max_length=128, trim_whitespace=False
+    )
 
     def validate_password(self, value):
         if not self.context["request"].user.check_password(value):

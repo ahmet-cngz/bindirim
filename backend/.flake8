@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 79
+# Ruff uses whitespace before slice colons; line breaks before operators are intentional.
+extend-ignore = E203, W503
+extend-exclude = .venv, .ruff_cache, staticfiles

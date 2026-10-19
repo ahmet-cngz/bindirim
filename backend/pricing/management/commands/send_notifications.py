@@ -19,11 +19,20 @@ class Command(BaseCommand):
         if not 1 <= options["limit"] <= 1000:
             raise CommandError("--limit must be between 1 and 1000.")
         if not settings.RESEND_API_KEY or not settings.NOTIFICATION_FROM_EMAIL:
-            self.stdout.write("Email delivery is unconfigured; set RESEND_API_KEY and NOTIFICATION_FROM_EMAIL.")
+            self.stdout.write(
+                "Email delivery is unconfigured; set RESEND_API_KEY "
+                "and NOTIFICATION_FROM_EMAIL."
+            )
             return
         now = timezone.now()
-        ids = list(EmailNotification.objects.filter(
-            available_lease(now), status="pending", next_attempt_at__lte=now,
-        ).order_by("next_attempt_at", "pk").values_list("pk", flat=True)[:options["limit"]])
+        ids = list(
+            EmailNotification.objects.filter(
+                available_lease(now),
+                status="pending",
+                next_attempt_at__lte=now,
+            )
+            .order_by("next_attempt_at", "pk")
+            .values_list("pk", flat=True)[: options["limit"]]
+        )
         counts = Counter(deliver_email(pk) for pk in ids)
         self.stdout.write(f"Email notifications: {dict(counts)}")
