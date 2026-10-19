@@ -25,6 +25,11 @@ does not load `.env` automatically. To use a file, copy it to `.env`, edit its
 values, then run `set -a; source .env; set +a` before running management commands.
 Never commit `.env` or your database.
 
+Plain `python manage.py runserver` defaults to `DJANGO_DEBUG=true` when that
+variable is unset, so it can use the local development secret. Explicit settings
+are preserved. Other commands and production WSGI startup still require a secret
+key or an explicit development environment.
+
 In another terminal, activate the environment and export the same configuration:
 
 ```sh
