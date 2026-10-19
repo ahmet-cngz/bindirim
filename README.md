@@ -1,46 +1,77 @@
-# Getting Started with Create React App
+# Bindirim
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A price tracker for Trendyol and Hepsiburada, with private watchlists, price
+history, target-price alerts, and optional email notifications through Resend.
+The interface is in Turkish.
 
-## Available Scripts
+This monorepo contains both applications:
 
-In the project directory, you can run:
+| Directory | Application | Setup and details |
+| --- | --- | --- |
+| `client/` | React, TypeScript, Material UI, and SCSS | [Client README](client/README.md) |
+| `backend/` | Django REST Framework API and scheduled price/email workers | [Backend README](backend/README.md) |
 
-### `npm start`
+## Run locally
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Start the API from the repository root:
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```sh
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.lock.txt
+export DJANGO_DEBUG=true
+python manage.py migrate
+python manage.py runserver 127.0.0.1:8000
+```
 
-### `npm test`
+In a second terminal, start the client:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```sh
+cd client
+npm ci
+npm start
+```
 
-### `npm run build`
+Open http://localhost:3000. The development client proxies `/api/` to the API at
+http://127.0.0.1:8000. Create an account through the app to start a private watchlist.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Retailer checks run in a separate process. In another terminal, activate the
+backend environment and run:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```sh
+cd backend
+source .venv/bin/activate
+export DJANGO_DEBUG=true
+python manage.py check_prices --limit 25
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Schedule this command regularly for ongoing tracking. It processes due products
+and queued email notifications. See the backend README for scheduling and
+[Resend configuration](backend/README.md#email-notifications-resend).
 
-### `npm run eject`
+## Configuration
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+`backend/.env.example` documents backend settings. Export them in the process
+launcher or source a local `.env` file; Django does not load `.env` automatically.
+Credentials, local databases, dependencies, logs, and generated builds are ignored.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Verification
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+From `backend/`, with its virtual environment active:
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```sh
+DJANGO_DEBUG=true python manage.py test
+DJANGO_DEBUG=true python manage.py makemigrations --check --dry-run
+```
 
-## Learn More
+From `client/`:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```sh
+npm run typecheck
+CI=true npm test -- --watchAll=false
+npm run build
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The frontend and backend retain their own dependency manifests and run commands.
+The existing frontend Git history is preserved before the move into `client/`.

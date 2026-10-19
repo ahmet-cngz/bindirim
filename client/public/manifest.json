@@ -1,0 +1,16 @@
+{
+  "short_name": "Bindirim",
+  "name": "Bindirim — İyi fiyatlar gözümüzden kaçmaz",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0b1720",
+  "background_color": "#0b1720",
+  "lang": "tr"
+}

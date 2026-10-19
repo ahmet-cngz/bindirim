@@ -1,0 +1,36 @@
+// The only eight base colors. Components consume these CSS variables.
+$colors: (
+  "ink": #e6eef3,
+  "muted": #a0b4c2,
+  "green": #73c9aa,
+  "blue": #244c63,
+  "tint": #1c403b,
+  "canvas": #0b1720,
+  "paper": #132633,
+  "line": #2b414f,
+);
+
+:root {
+  color-scheme: dark;
+  @each $name, $value in $colors {
+    --color-#{$name}: #{$value};
+  }
+  --space-8: 8px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-48: 48px;
+  --radius-small: 8px;
+  --radius-card: 16px;
+  --sidebar-width: 248px;
+}
+
+// Export the same palette for MUI. No second set of hardcoded theme colors.
+:export {
+  @each $name, $value in $colors {
+    #{$name}: #{$value};
+  }
+  space8: 8px;
+  space16: 16px;
+  space24: 24px;
+  space48: 48px;
+}
